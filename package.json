@@ -1,0 +1,16 @@
+{
+  "name": "loimos-vis-generate",
+  "version": "1.0.0",
+  "description": "",
+  "main": "generate.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Rakrish Dhakal",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "adm-zip": "^0.5.9",
+    "axios": "^0.27.2",
+    "mapshaper": "^0.6.5"
+  }
+}
