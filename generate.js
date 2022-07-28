@@ -29,12 +29,70 @@ const exec = util.promisify(require('child_process').exec);
 
     // Convert geojson files to albers usa projection
     console.log('Converting to albers...');
-    if (!fs.existsSync('output')){
+    await exec('npm install -g dirty-reprojectors');
+    await exec('cat temp/cb_2021_us_state_20m.json | dirty-reproject --forward albersUsa > temp/states_albers.json');
+    await exec('cat temp/cb_2021_us_county_20m.json | dirty-reproject --forward albersUsa > temp/counties_albers.json');
+
+    // Get population data
+    console.log('Downloading population data...');
+    const pop_url = 'https://www2.census.gov/programs-surveys/popest/datasets/2020-2021/counties/totals/co-est2021-alldata.csv';
+    const pop_body = await axios.get(pop_url, { responseType: 'text' });
+    const pop_data = pop_body.data.split('\n').map(row => row.split(','));
+
+    // Modify metadata
+    console.log('Modifying feature properties...');
+    const states = require('./temp/states_albers.json').features.map(
+        ({ properties, bbox, ...rest }) => ({
+            ...rest,
+            properties: {
+                fips: properties.STATEFP,
+                name: properties.NAME,
+                abbr: properties.STUSPS,
+                population: (() => {
+                    const entry = pop_data.find(
+                        (row) => row[0] === '040' && row[3] === properties.STATEFP
+                    );
+                    return entry ? parseInt(entry[9]) : 0;
+                })(),
+            },
+            bbox,
+        })
+    );
+
+    const counties = require('./temp/counties_albers.json').features.map(
+        ({ properties, bbox, ...rest }) => ({
+            ...rest,
+            properties: {
+                fips: properties.STATEFP + properties.COUNTYFP,
+                stateFips: properties.STATEFP,
+                countyFips: properties.COUNTYFP,
+                name: properties.NAMELSAD,
+                stateName: properties.STATE_NAME,
+                stateAbbr: properties.STUSPS,
+                population: (() => {
+                    const entry = pop_data.find(
+                        (row) =>
+                            row[3] === properties.STATEFP &&
+                            row[4] === properties.COUNTYFP
+                    );
+                    return entry ? parseInt(entry[9]) : 0;
+                })(),
+            },
+            bbox,
+        })
+    );
+
+    // Export final files
+    console.log('Exporting geojson files...');
+    if (!fs.existsSync('output')) {
         fs.mkdirSync('output');
     }
-    await exec('npm install -g dirty-reprojectors');
-    await exec('cat temp/cb_2021_us_state_20m.json | dirty-reproject --forward albersUsa > output/states.json');
-    await exec('cat temp/cb_2021_us_county_20m.json | dirty-reproject --forward albersUsa > output/counties.json');
-
-    console.log('Done!');
+    fs.writeFileSync(
+        './output/states.json',
+        JSON.stringify({ type: 'FeatureCollection', features: states })
+    );
+    fs.writeFileSync(
+        './output/counties.json',
+        JSON.stringify({ type: 'FeatureCollection', features: counties })
+    );
 })();

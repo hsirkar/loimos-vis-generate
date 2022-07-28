@@ -13,6 +13,7 @@ This will generate 2 json files, one for state and one for county boundaries. Co
 
 ## References
 
-- [US Census Bureau data](https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html)
+- [US Census Bureau map data](https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html)
+- [US Census Bureau population data](https://www.census.gov/data/tables/time-series/demo/popest/2020s-counties-total.html#par_textimage)
 - [Mapbox blog post about Albers projection](https://blog.mapbox.com/mapping-the-us-elections-guide-to-albers-usa-projection-in-studio-45be6bafbd7e)
 - [Mapshaper issue](https://github.com/developmentseed/dirty-reprojectors/issues/13)
